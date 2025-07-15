@@ -1,3 +1,61 @@
+# 🔔 Firebase Push Notification Integration in Flutter
+
+This guide walks through the complete setup for enabling push notifications in a Flutter application using `firebase_messaging` and `flutter_local_notifications`.
+
+---
+
+## 📋 Prerequisites
+
+- Flutter SDK
+- A Flutter app setup
+- Firebase account
+
+---
+
+## 🚀 Step-by-Step Setup
+
+### ✅ Step 1: Create a Firebase Project
+
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Create a new project.
+3. Add your Flutter app to the project.
+4. Download and place the `google-services.json` and `GoogleService-Info.plist` into their respective platform folders.
+
+---
+
+### ✅ Step 2: Connect Firebase to Your Flutter App
+
+Follow the standard Firebase-Flutter setup:
+
+- Use `firebase_core` and initialize it in `main.dart`.
+- Ensure platform-specific Firebase configuration is complete.
+
+---
+
+### ✅ Step 3: Add Flutter Dependencies
+
+In your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  firebase_core: ^2.x.x
+  firebase_messaging: ^15.2.9
+  flutter_local_notifications: ^17.0.0
+```
+
+Then run:
+
+```bash
+flutter pub get
+```
+
+---
+
+### ✅ Step 4: Create `notification_service.dart`
+
+Path: `lib/core/services/notification_service.dart`
+
+```dart
 import 'dart:async';
 import 'dart:developer';
 import 'package:firebasetodo/core/consts/currentuser.dart';
@@ -5,7 +63,6 @@ import 'package:firebasetodo/core/consts/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// DEFINE ROUTER OBJECT INSIDE
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -13,7 +70,6 @@ class NotificationService {
   NotificationService._internal();
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -33,20 +89,19 @@ class NotificationService {
       },
     );
 
-    // Firebase permission
     await _messaging.requestPermission(alert: true, badge: true, sound: true);
-    // Log token (optional)
+
     String? token = await _messaging.getToken();
     log("FCM Token: $token");
-    // Foreground message
+
     FirebaseMessaging.onMessage.listen((message) {
       _showNotification(message);
     });
-    // Background click
+
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       _handleNotificationClick(message.data['route']);
     });
-    // Terminated state
+
     RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
       _handleNotificationClick(initialMessage.data['route']);
@@ -105,3 +160,75 @@ class NotificationService {
     }
   }
 }
+```
+
+---
+
+### ✅ Step 5: Update `main.dart`
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService().init(); // Initialize notification service
+  runApp(TodoApp());
+}
+```
+
+---
+
+### ✅ Step 6: Create Notification Icon
+
+1. Go to: [Android Asset Studio – Notification Icons](https://romannurik.github.io/AndroidAssetStudio/icons-notification.html)
+2. Upload your icon (transparent background).
+3. Name the file: `ic_launcher`
+4. Place it inside: `android/app/src/main/res/drawable/`
+
+---
+
+### ✅ Step 7: Add Color to `colors.xml`
+
+Create `colors.xml` at:
+
+```
+android/app/src/main/res/values/colors.xml
+```
+
+```xml
+<resources>
+    <color name="notification_color">#000000</color>
+</resources>
+```
+
+---
+
+### ✅ Step 8: Update `AndroidManifest.xml`
+
+File: `android/app/src/main/AndroidManifest.xml`
+
+Add the following inside `<manifest>`:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+```
+
+Inside `<application>` tag:
+
+```xml
+<!-- Notification metadata and services -->
+<!-- ...omitted for brevity... -->
+```
+
+---
+
+## 📦 Additional Tips
+
+- You can customize notification appearance using `AndroidNotificationDetails`.
+- Use `message.data['route']` to navigate the user based on notification payload.
+
+---
+
+## ✅ Done!
+
+You now have a fully functional push notification system in your Flutter app using Firebase and local notifications.
